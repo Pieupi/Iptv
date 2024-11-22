@@ -1,0 +1,51 @@
+version: "3"
+services:
+  iptv-proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      # If your are using local m3u file instead of m3u remote file
+      # put your m3u file in this folder
+      - ./iptv:/root/iptv
+    container_name: "iptv-proxy"
+    restart: on-failure
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.iptv-proxy.rule=Host(`http://acsa.ws/`)"
+      - "traefik.http.routers.iptv-proxy.entrypoints=websecure"
+      - "traefik.http.routers.iptv-proxy.tls.certresolver=mydnschallenge"
+      - "traefik.http.services.iptv-proxy.loadbalancer.server.port=8080"
+    environment:
+      # if you are using m3u remote file
+      # M3U_URL: https://example.com/iptvfile.m3u
+      M3U_URL: http://http://acsa.ws//get.php?username=reginaldooliver1&password=oliverreginaldo&type=m3u_plus&output=ts
+      # Iptv-Proxy listening port
+      PORT: 8080
+      # Port to expose for Xtream or m3u file tracks endpoint
+      ADVERTISED_PORT: 443
+      # Hostname or IP to expose the IPTVs endpoints (for machine not for docker)
+      HOSTNAME: iptv.proxyexample.xyz
+      GIN_MODE: release
+      # Inportant to activate https protocol on proxy links
+      HTTPS: 1
+      ## Xtream-code proxy configuration
+      XTREAM_USER: reginaldooliver1
+      XTREAM_PASSWORD: oliverreginaldo
+      XTREAM_BASE_URL: "http://acsa.ws/"
+      #will be used for m3u and xtream auth proxy
+      USER: Pie
+      PASSWORD: Pie
+
+  traefik:
+    restart: always
+    image: traefik:v2.4
+    read_only: true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./Traefik/traefik.yaml:/traefik.yaml:ro
+      - ./Traefik/etc/traefik:/etc/traefik/
+      - ./Traefik/log:/var/log/traefik/
